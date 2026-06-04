@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>小满 · 猫咪相册与视频</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+    background: #fef9f0;
+    color: #3e2a2a;
+    line-height: 1.5;
+    padding: 1.5rem;
+    cursor: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"%3E%3Cg fill="%23ffb7b2" stroke="%23ffffff" stroke-width="1.5"%3E%3C!-- 左上一 --%3E%3Ccircle cx="8" cy="10" r="4.5"/%3E%3C!-- 右上一 --%3E%3Ccircle cx="24" cy="10" r="4.5"/%3E%3C!-- 左下一 --%3E%3Ccircle cx="6" cy="20" r="4.5"/%3E%3C!-- 右下一 --%3E%3Ccircle cx="26" cy="20" r="4.5"/%3E%3C!-- 中央大肉垫（心形轮廓）--%3E%3Cpath d="M16 14 C12 11, 8 15, 16 24 C24 15, 20 11, 16 14Z" fill="%23ffb7b2" stroke="%23ffffff" stroke-width="1.5"/%3E%3C/g%3E%3C/svg%3E') 16 24, auto;
+}
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 2rem;
+            box-shadow: 0 20px 35px -12px rgba(0,0,0,0.1);
+            padding: 2rem 1.8rem 2.5rem;
+        }
+
+        .cat-header {
+            text-align: center;
+            border-bottom: 2px dashed #ffd89a;
+            padding-bottom: 1.2rem;
+            margin-bottom: 1.8rem;
+        }
+
+        .cat-name {
+            font-size: 2.6rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #e68a2e, #b95e1a);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+
+        .cat-badge {
+            display: inline-block;
+            background: #ffe1b9;
+            padding: 0.2rem 1rem;
+            border-radius: 40px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #a3490c;
+            margin-top: 0.5rem;
+        }
+
+        /* 主图 + 左右按钮布局 */
+        .media-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            margin: 1.2rem 0 1rem;
+        }
+
+        .icon-btn {
+            background: #fff0e0;
+            border-radius: 60px;
+            padding: 0.8rem 1.2rem;
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: #b95e1a;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid #ffdcb5;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .icon-btn:hover {
+            background: #ffe0c4;
+            transform: translateY(-2px);
+        }
+
+        .main-photo {
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .main-photo img {
+            width: 70%;
+            max-width: 260px;
+            height: auto;
+            border-radius: 1rem;
+            display: block;
+            margin: 0 auto;
+            box-shadow: 0 8px 18px rgba(0,0,0,0.1);
+        }
+
+        /* ========== 修复弹窗滚动 ========== */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.85);
+            z-index: 1000;
+            justify-content: center;
+            align-items: flex-start;  /* 让内容从顶部开始，而不是垂直居中 */
+            overflow-y: auto;         /* 整个弹窗可滚动 */
+        }
+
+        .modal-content {
+            background: #fffaf2;
+            max-width: 700px;
+            width: 90%;
+            margin: 2rem auto;        /* 上下留出间距，自动居中 */
+            border-radius: 2rem;
+            padding: 1.5rem;
+            position: relative;
+            animation: fadeIn 0.2s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.98); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            font-size: 2rem;
+            font-weight: bold;
+            color: #b95e1a;
+            cursor: pointer;
+            transition: 0.1s;
+        }
+
+        .close-btn:hover {
+            color: #6b3a0c;
+        }
+
+        .modal-title {
+            font-size: 1.6rem;
+            font-weight: 600;
+            color: #b95e1a;
+            margin-bottom: 1rem;
+            text-align: center;
+            border-bottom: 2px solid #ffd89a;
+            display: inline-block;
+            padding-bottom: 0.3rem;
+        }
+
+        /* 图片网格 */
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        /* ========== 相册卡片样式（带名称 + 过渡效果） ========== */
+        .photo-card {
+            cursor: pointer;
+            text-align: center;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            border-radius: 1rem;
+            padding: 0.25rem;
+        }
+
+        .photo-card:hover {
+            transform: translateY(-5px);
+            background: #fff0e0;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+        }
+
+        .photo-card img {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            object-fit: cover;
+            border-radius: 1rem;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .photo-card div {
+            margin-top: 0.5rem;
+            font-size: 0.8rem;
+            color: #b95e1a;
+            font-weight: 500;
+        }
+
+        /* 视频列表 */
+        .video-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .video-item {
+            background: #fef1e4;
+            border-radius: 1rem;
+            padding: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            cursor: pointer;
+            transition: 0.2s;
+            border: 1px solid #ffe0c6;
+        }
+
+        .video-item:hover {
+            background: #ffe3cf;
+            transform: translateX(4px);
+        }
+
+        .video-thumb {
+            font-size: 2rem;
+        }
+
+        .video-name {
+            font-weight: 500;
+            color: #5e3519;
+        }
+
+        /* 大图预览浮层 */
+        .preview-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            justify-content: center;
+            align-items: center;
+            z-index: 1100;
+        }
+
+        .preview-overlay img {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 1rem;
+        }
+
+        .intro {
+            background: #fff5ea;
+            padding: 1.3rem;
+            border-radius: 1.2rem;
+            margin: 1rem 0;
+        }
+
+        .info-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin: 1.6rem 0;
+        }
+
+        .info-card {
+            flex: 1 1 160px;
+            background: #fef3e8;
+            border-radius: 1.2rem;
+            padding: 0.9rem 0.5rem;
+            text-align: center;
+            transition: transform 0.1s ease;
+        }
+
+        .info-card:hover {
+            transform: translateY(-3px);
+            background: #ffedd9;
+        }
+
+        .info-emoji {
+            font-size: 2rem;
+            display: block;
+            margin-bottom: 0.3rem;
+        }
+
+        .info-label {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #b95e1a;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info-value {
+            font-size: 1rem;
+            font-weight: 500;
+            margin-top: 0.25rem;
+            color: #2e241f;
+        }
+
+        .quote {
+            font-style: italic;
+            background: #fdebd0;
+            border-left: 4px solid #f0a45a;
+            padding: 0.8rem 1rem;
+            border-radius: 1rem;
+            margin: 1.5rem 0;
+            color: #4f2e19;
+        }
+
+        .footer {
+            margin-top: 2rem;
+            text-align: center;
+            font-size: 0.75rem;
+            color: #b28464;
+            border-top: 1px solid #ffe1c6;
+            padding-top: 1.2rem;
+        }
+
+        @media (max-width: 650px) {
+            .icon-btn {
+                padding: 0.5rem 1rem;
+                font-size: 1rem;
+            }
+            .cat-name {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="cat-header">
+        <div class="cat-name">🐱 小满 · 小档案</div>
+        <div class="cat-badge">🐾 家猫 · 治愈担当 🐾</div>
+    </div>
+
+    <div class="media-row">
+        <div class="icon-btn" id="albumBtn">📸 相册</div>
+        <div class="main-photo">
+            <img src="cat-photo.jpg" alt="小满照片" style="width: 100%; max-width: 240px; border-radius: 1rem;">
+        </div>
+        <div class="icon-btn" id="videoBtn">🎬 视频</div>
+    </div>
+
+    <div class="intro">
+        <strong>✨ 关于小满</strong><br>
+        小满是2020年春天来到我身边的。想养小猫的念头一直都有，甚至早早的都取了名放在备忘录里，但一直没有机会。当时正值疫情，本来就整天在家无聊刷手机，微博突然给我推送领养信息，又正好在重庆，就这样拥有了人生中第一只橘黄小奶猫。
+    </div>
+
+    <div class="info-grid">
+        <div class="info-card">
+            <span class="info-emoji">🎂</span>
+            <div class="info-label">生日</div>
+            <div class="info-value">2020.04.22</div>
+        </div>
+        <div class="info-card">
+            <span class="info-emoji">🐈</span>
+            <div class="info-label">品种</div>
+            <div class="info-value">正宗中华田园橘猫；中华田园卡车；胸前有白色领巾；戴白手套，穿白袜子</div>
+        </div>
+        <div class="info-card">
+            <span class="info-emoji">🍗</span>
+            <div class="info-label">最爱食物</div>
+            <div class="info-value">虾虾、罐头、鸡肉冻干、猫条、鸭脖、鸡胸肉、肉饼且不爱三文鱼（非常平民的口味）</div>
+        </div>
+        <div class="info-card">
+            <span class="info-emoji">💤</span>
+            <div class="info-label">每日睡觉</div>
+            <div class="info-value">25小时</div>
+        </div>
+    </div>
+
+    <div class="quote">
+        “ meow，meow meow meow meow meow！meow meow meow meow meow meow meow meow～ ”
+    </div>
+
+    <div class="footer">
+        🧡 人，感谢你的观看！<br>
+        最后更新：2026年6月
+    </div>
+</div>
+
+<!-- 相册模态框 -->
+<div id="albumModal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" id="closeAlbumBtn">&times;</span>
+        <div style="text-align: center;">
+            <span class="modal-title">📖 小满の相册</span>
+        </div>
+        <div id="photoGrid" class="photo-grid">
+            <!-- 动态加载图片 -->
+        </div>
+        <p style="text-align: center; margin-top: 1rem; font-size: 0.8rem; color: #a67c52;">👉 点击任意图片可以放大查看 👈</p>
+    </div>
+</div>
+
+<!-- 视频模态框 -->
+<div id="videoModal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" id="closeVideoBtn">&times;</span>
+        <div style="text-align: center;">
+            <span class="modal-title">🎥 小满の视频集</span>
+        </div>
+        <div id="videoList" class="video-list">
+            <!-- 动态加载视频列表 -->
+        </div>
+    </div>
+</div>
+
+<!-- 图片大图预览浮层 -->
+<div id="previewOverlay" class="preview-overlay">
+    <img id="previewImg" src="">
+</div>
+
+<script>
+    // --------------------------------------------
+    // 相册图片列表（支持字符串或对象）
+    // --------------------------------------------
+    const photoList = [
+        "cat-photo.jpg",
+        { src: "沉思时.jpg", name: "沉思时" },
+        { src: "穿裙子.jpg", name: "穿裙子" },
+        { src: "打架时.jpg", name: "打架时" },
+        { src: "捣乱.jpg", name: "捣乱" },
+        { src: "饿龙咆哮.jpg", name: "饿龙咆哮" },
+        { src: "喝水时.jpg", name: "喝水时" },
+        { src: "赖床时.jpg", name: "赖床时" },
+        { src: "平常.jpg", name: "平常" },
+        { src: "熟睡时.jpg", name: "熟睡时" },
+        { src: "睡醒等待时.jpg", name: "睡醒等待时" },
+        { src: "玩耍.jpg", name: "玩耍" },
+        { src: "委屈.jpg", name: "委屈" },
+        { src: "小不点时.jpg", name: "小不点时" },
+        { src: "修板凳时.jpg", name: "修板凳时" },
+        { src: "学习时.jpg", name: "学习时" },
+        { src: "要东西吃时.jpg", name: "要东西吃时" },
+        { src: "硬照时.jpg", name: "硬照时" },
+    ];
+
+    // 视频列表
+    const videoListData = [
+        { name: "认识吹风机", type: "local", src: "认识吹风机.mp4" },
+        { name: "要吃小罐头", type: "local", src: "要罐头.mp4" },
+    ];
+
+    // 渲染相册（带名称卡片和悬浮效果）
+    function renderPhotoGrid() {
+        const grid = document.getElementById("photoGrid");
+        if (!grid) return;
+        if (photoList.length === 0) {
+            grid.innerHTML = '<p style="text-align:center; grid-column:1/-1;">暂未添加照片，请将照片文件放在同一目录下并在代码 photoList 中填写</p>';
+            return;
+        }
+        let html = "";
+        for (let i = 0; i < photoList.length; i++) {
+            const item = photoList[i];
+            const src = typeof item === 'string' ? item : item.src;
+            const name = typeof item === 'string' ? src.split('/').pop().split('.')[0] : (item.name || "无标题");
+            html += `
+                <div class="photo-card" data-src="${src}">
+                    <img src="${src}" alt="小满照片" loading="lazy">
+                    <div>${escapeHtml(name)}</div>
+                </div>
+            `;
+        }
+        grid.innerHTML = html;
+
+        // 点击卡片放大
+        document.querySelectorAll(".photo-card").forEach(card => {
+            card.addEventListener("click", (e) => {
+                e.stopPropagation();
+                const fullImg = document.getElementById("previewImg");
+                fullImg.src = card.getAttribute("data-src");
+                document.getElementById("previewOverlay").style.display = "flex";
+            });
+        });
+    }
+
+    // 渲染视频列表
+    function renderVideoList() {
+        const container = document.getElementById("videoList");
+        if (!container) return;
+        if (videoListData.length === 0) {
+            container.innerHTML = '<p style="text-align:center;">暂未添加视频，可以在代码中配置视频文件或链接~</p>';
+            return;
+        }
+        let html = "";
+        for (let i = 0; i < videoListData.length; i++) {
+            const v = videoListData[i];
+            html += `
+                <div class="video-item" data-src="${v.src}" data-type="${v.type}">
+                    <div class="video-thumb">🎞️</div>
+                    <div class="video-name">${escapeHtml(v.name)}</div>
+                </div>
+            `;
+        }
+        container.innerHTML = html;
+
+        document.querySelectorAll(".video-item").forEach(item => {
+            item.addEventListener("click", () => {
+                const src = item.getAttribute("data-src");
+                const type = item.getAttribute("data-type");
+                window.open(src, "_blank");
+            });
+        });
+    }
+
+    function escapeHtml(str) {
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    // 模态框控制
+    const albumModal = document.getElementById("albumModal");
+    const videoModal = document.getElementById("videoModal");
+    const albumBtn = document.getElementById("albumBtn");
+    const videoBtn = document.getElementById("videoBtn");
+    const closeAlbum = document.getElementById("closeAlbumBtn");
+    const closeVideo = document.getElementById("closeVideoBtn");
+
+    function openModal(modal) { modal.style.display = "flex"; }
+    function closeModal(modal) { modal.style.display = "none"; }
+
+    albumBtn.onclick = () => { renderPhotoGrid(); openModal(albumModal); };
+    videoBtn.onclick = () => { renderVideoList(); openModal(videoModal); };
+    closeAlbum.onclick = () => closeModal(albumModal);
+    closeVideo.onclick = () => closeModal(videoModal);
+
+    albumModal.onclick = (e) => { if (e.target === albumModal) closeModal(albumModal); };
+    videoModal.onclick = (e) => { if (e.target === videoModal) closeModal(videoModal); };
+
+    const previewOverlay = document.getElementById("previewOverlay");
+    previewOverlay.onclick = () => { previewOverlay.style.display = "none"; };
+
+    renderPhotoGrid(); // 预渲染
+</script>
+</body>
+</html>
